@@ -1,4 +1,4 @@
-use crate::Handler;
+use crate::utils::event_handler::Handler;
 use std::time::Instant;
 
 use serenity::builder::EditMessage;
