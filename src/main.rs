@@ -4,6 +4,8 @@ use dotenv::dotenv;
 
 use rosu_v2::prelude::*;
 
+use serenity::futures::future::BoxFuture;
+use serenity::model::channel::Message;
 use serenity::prelude::*;
 
 mod commands {
@@ -11,7 +13,23 @@ mod commands {
     pub mod profile;
 }
 
+use crate::commands::ping;
+use crate::commands::profile;
+
 mod utils;
+
+type CommandFn = fn(
+    &Context,
+    &Message,
+    Vec<&str>,
+    &utils::event_handler::Handler,
+) -> BoxFuture<'static, Result<(), SerenityError>>;
+
+struct Command {
+    name: &'static str,
+    aliases: Vec<&'static str>,
+    exec: CommandFn,
+}
 
 #[tokio::main]
 async fn main() {
@@ -35,9 +53,26 @@ async fn main() {
 
     let intents = GatewayIntents::GUILD_MESSAGES | GatewayIntents::MESSAGE_CONTENT;
 
+    // TODO: fix the errors
+    let commands = vec![
+        Command {
+            name: "ping",
+            aliases: vec!["ping"],
+            exec: ping::execute,
+        },
+        Command {
+            name: "profile",
+            aliases: vec!["osu", "mania", "taiko", "ctb"],
+            exec: profile::execute,
+        },
+    ];
+
     // Build the Discord client, and pass in our event handler
     let mut client = Client::builder(discord_token, intents)
-        .event_handler(utils::event_handler::Handler { osu_client })
+        .event_handler(utils::event_handler::Handler {
+            osu_client,
+            commands,
+        })
         .await
         .expect("Error creating client.");
 

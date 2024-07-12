@@ -5,13 +5,14 @@ use serenity::prelude::*;
 
 use rosu_v2::prelude::*;
 
-use crate::commands;
+use crate::Command;
 
 pub struct Handler {
     pub osu_client: Osu,
+    pub commands: Vec<Command>,
 }
 
-const PREFIX: &str = "!";
+const PREFIX: &str = "]";
 
 #[async_trait]
 impl EventHandler for Handler {
@@ -39,22 +40,18 @@ impl EventHandler for Handler {
             .collect();
 
         // Get the command name by removing the first arg of the args array
-        let command = args.remove(0);
+        let command_name = args.remove(0);
 
-        match command.to_lowercase().as_str() {
-            "ping" => {
-                if let Err(reason) = commands::ping::execute(&ctx, &msg, &args, self).await {
-                    println!("There was an error sending message: {:#?}", reason);
-                };
+        for command in &self.commands {
+            if command.name == command_name || command.aliases.contains(&command_name) {
+                if let Err(reason) = (command.exec)(&ctx, &msg, args, &self).await {
+                    println!(
+                        "There was an error while handling command {}: {:#?}",
+                        command.name, reason
+                    )
+                }
+                return;
             }
-
-            "osu" => {
-                if let Err(reason) = commands::profile::execute(&ctx, &msg, &args, self).await {
-                    println!("There was an error sending message: {:#?}", reason);
-                };
-            }
-
-            _ => {}
         }
     }
 }
