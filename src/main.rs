@@ -10,10 +10,12 @@ use serenity::prelude::*;
 use serenity::Error;
 
 mod commands {
+    pub mod link;
     pub mod ping;
     pub mod profile;
 }
 
+use crate::commands::link;
 use crate::commands::ping;
 use crate::commands::profile;
 
@@ -67,6 +69,11 @@ async fn main() {
             name: "profile",
             aliases: vec!["osu", "mania", "taiko", "ctb"],
             exec: profile::execute,
+        },
+        Command {
+            name: "link",
+            aliases: vec!["link"],
+            exec: link::execute,
         },
     ];
 

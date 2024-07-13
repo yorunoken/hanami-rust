@@ -2,11 +2,14 @@ use chrono::{Datelike, Utc};
 use num_format::{Locale, ToFormattedString};
 
 use rosu_v2::model::GameMode;
+
 use serenity::builder::{CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter, CreateMessage};
 use serenity::futures::future::BoxFuture;
 use serenity::model::channel::Message;
 use serenity::prelude::*;
 use serenity::Error;
+
+use rusqlite::{Connection, Result};
 
 use crate::utils::emojis::Grades;
 use crate::utils::event_handler::Handler;
@@ -146,7 +149,7 @@ pub fn execute<'a>(
             }
             Err(user_error) => {
                 msg.channel_id
-                    .say(&ctx.http, format!("Error fetching user: {}", user_error))
+                    .say(&ctx.http, format!("Error fetching user: `{}`", user_error))
                     .await?;
             }
         }
