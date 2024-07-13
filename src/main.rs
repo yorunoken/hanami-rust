@@ -20,10 +20,12 @@ use crate::commands::profile;
 mod utils;
 
 type CommandFn = for<'a> fn(
-    &'a Context,
-    &'a Message,
-    Vec<&'a str>,
-    &'a utils::event_handler::Handler,
+    &'a Context,                       // Command context, `ctx`
+    &'a Message,                       // Message variable, `msg`
+    Vec<&'a str>,                      // Aliases, `aliases`
+    &'a utils::event_handler::Handler, // The handler, `handler`
+    &'a str,                           // The command's name, `command_name`
+    Option<&'a str>,                   // The command's alias (if it was passed)
 ) -> BoxFuture<'a, Result<(), Error>>;
 
 struct Command {

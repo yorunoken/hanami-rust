@@ -12,6 +12,8 @@ pub fn execute<'a>(
     msg: &'a Message,
     _args: Vec<&'a str>,
     _handler: &'a Handler,
+    _command_name: &'a str,
+    _command_alias: Option<&'a str>,
 ) -> BoxFuture<'a, Result<(), Error>> {
     Box::pin(async move {
         let timer_start = Instant::now();

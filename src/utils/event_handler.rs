@@ -44,7 +44,15 @@ impl EventHandler for Handler {
 
         for command in &self.commands {
             if command.name == command_name || command.aliases.contains(&command_name) {
-                if let Err(reason) = (command.exec)(&ctx, &msg, args, &self).await {
+                let matched_alias = if command.name == command_name {
+                    None
+                } else {
+                    Some(command_name)
+                };
+
+                if let Err(reason) =
+                    (command.exec)(&ctx, &msg, args, &self, command.name, matched_alias).await
+                {
                     println!(
                         "There was an error while handling command {}: {:#?}",
                         command.name, reason
