@@ -7,6 +7,7 @@ use rosu_v2::prelude::*;
 use serenity::futures::future::BoxFuture;
 use serenity::model::channel::Message;
 use serenity::prelude::*;
+use serenity::Error;
 
 mod commands {
     pub mod ping;
@@ -18,12 +19,12 @@ use crate::commands::profile;
 
 mod utils;
 
-type CommandFn = fn(
-    &Context,
-    &Message,
-    Vec<&str>,
-    &utils::event_handler::Handler,
-) -> BoxFuture<'static, Result<(), SerenityError>>;
+type CommandFn = for<'a> fn(
+    &'a Context,
+    &'a Message,
+    Vec<&'a str>,
+    &'a utils::event_handler::Handler,
+) -> BoxFuture<'a, Result<(), Error>>;
 
 struct Command {
     name: &'static str,
@@ -53,7 +54,7 @@ async fn main() {
 
     let intents = GatewayIntents::GUILD_MESSAGES | GatewayIntents::MESSAGE_CONTENT;
 
-    // TODO: fix the errors
+    // Define commands
     let commands = vec![
         Command {
             name: "ping",
