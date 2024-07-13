@@ -1,6 +1,7 @@
 use chrono::{Datelike, Utc};
 use num_format::{Locale, ToFormattedString};
 
+use rosu_v2::model::GameMode;
 use serenity::builder::{CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter, CreateMessage};
 use serenity::futures::future::BoxFuture;
 use serenity::model::channel::Message;
@@ -15,8 +16,22 @@ pub fn execute<'a>(
     msg: &'a Message,
     args: Vec<&'a str>,
     handler: &'a Handler,
+    _command_name: &'a str,
+    command_alias: Option<&'a str>,
 ) -> BoxFuture<'a, Result<(), Error>> {
     Box::pin(async move {
+        let mode: GameMode = if let Some(alias) = command_alias {
+            match alias {
+                "osu" => GameMode::Osu,
+                "mania" => GameMode::Mania,
+                "taiko" => GameMode::Taiko,
+                "ctb" => GameMode::Catch,
+                _ => GameMode::Osu,
+            }
+        } else {
+            GameMode::Osu
+        };
+
         // Start typing
         msg.channel_id.start_typing(&ctx.http);
 
@@ -28,7 +43,7 @@ pub fn execute<'a>(
             return Ok(());
         }
 
-        match handler.osu_client.user(username).await {
+        match handler.osu_client.user(username).mode(mode).await {
             Ok(user) => {
                 let statistics = user.statistics.expect("User statistics not found");
 
