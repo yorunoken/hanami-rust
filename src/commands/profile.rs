@@ -25,7 +25,6 @@ pub fn execute<'a>(
     Box::pin(async move {
         let mode: GameMode = if let Some(alias) = command_alias {
             match alias {
-                "osu" => GameMode::Osu,
                 "mania" => GameMode::Mania,
                 "taiko" => GameMode::Taiko,
                 "ctb" => GameMode::Catch,
