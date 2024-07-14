@@ -4,10 +4,7 @@ use dotenv::dotenv;
 
 use rosu_v2::prelude::*;
 
-use serenity::futures::future::BoxFuture;
-use serenity::model::channel::Message;
 use serenity::prelude::*;
-use serenity::Error;
 
 mod commands {
     pub mod link;
@@ -15,26 +12,9 @@ mod commands {
     pub mod profile;
 }
 
-use crate::commands::link;
-use crate::commands::ping;
-use crate::commands::profile;
+mod options;
 
 mod utils;
-
-type CommandFn = for<'a> fn(
-    &'a Context,                       // Command context, `ctx`
-    &'a Message,                       // Message variable, `msg`
-    Vec<&'a str>,                      // Aliases, `aliases`
-    &'a utils::event_handler::Handler, // The handler, `handler`
-    &'a str,                           // The command's name, `command_name`
-    Option<&'a str>,                   // The command's alias (if it was passed)
-) -> BoxFuture<'a, Result<(), Error>>;
-
-struct Command {
-    name: &'static str,
-    aliases: Vec<&'static str>,
-    exec: CommandFn,
-}
 
 #[tokio::main]
 async fn main() {
@@ -58,24 +38,8 @@ async fn main() {
 
     let intents = GatewayIntents::GUILD_MESSAGES | GatewayIntents::MESSAGE_CONTENT;
 
-    // Define commands
-    let commands = vec![
-        Command {
-            name: "ping",
-            aliases: vec!["ping"],
-            exec: ping::execute,
-        },
-        Command {
-            name: "profile",
-            aliases: vec!["osu", "mania", "taiko", "ctb"],
-            exec: profile::execute,
-        },
-        Command {
-            name: "link",
-            aliases: vec!["link"],
-            exec: link::execute,
-        },
-    ];
+    // Get commands
+    let commands = options::get_prefix_commands();
 
     // Build the Discord client, and pass in our event handler
     let mut client = Client::builder(discord_token, intents)

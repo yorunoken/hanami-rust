@@ -5,7 +5,7 @@ use serenity::prelude::*;
 
 use rosu_v2::prelude::*;
 
-use crate::Command;
+use crate::options::Command;
 
 pub struct Handler {
     pub osu_client: Osu,
