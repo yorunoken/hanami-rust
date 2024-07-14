@@ -30,9 +30,7 @@ pub async fn execute(
         _ => user_help.as_ref().map_or(GameMode::Osu, |u| u.mode),
     };
 
-    let mut osu_user_result: Option<Result<UserExtended, OsuError>> = None;
-
-    let mut username = args.join(" ");
+    let username = args.join(" ");
     if username.is_empty() {
         if let Some(user_help) = &user_help {
             return fetch_and_send_user_data(
@@ -68,7 +66,7 @@ async fn fetch_and_send_user_data(
             let statistics = user.statistics.clone().expect("User statistics not found");
 
             let author = create_author_embed(&user, &statistics);
-            let fields = create_embed_fields(&statistics);
+            let fields = create_embed_fields(&user, &statistics);
             let footer = create_footer(&user);
 
             let embed = CreateEmbed::new()
@@ -115,10 +113,13 @@ fn create_author_embed(user: &UserExtended, statistics: &UserStatistics) -> Crea
         .url(format!("https://osu.ppy.sh/users/{}", user.user_id))
 }
 
-fn create_embed_fields(statistics: &UserStatistics) -> Vec<(&str, String, bool)> {
+fn create_embed_fields(
+    user: &UserExtended,
+    statistics: &UserStatistics,
+) -> Vec<(String, String, bool)> {
     vec![
         (
-            "Statistics :abacus:",
+            "Statistics :abacus:".to_string(),
             format!(
                 "**Accuracy:**  `{accuracy:.2}` • **Level:** `{level}.{progress:02}` \n\
                 **Playcount:** `{playcount}` (`{playtime} hrs`) \n\
@@ -130,7 +131,7 @@ fn create_embed_fields(statistics: &UserStatistics) -> Vec<(&str, String, bool)>
                 progress = statistics.level.progress,
                 playcount = statistics.playcount.to_formatted_string(&Locale::en),
                 playtime = (statistics.playtime / 3600).to_formatted_string(&Locale::en),
-                peak_rank = match &statistics.highest_rank {
+                peak_rank = match &user.highest_rank {
                     Some(peak_rank) => format!(
                         "#`{}` • **Achieved:** <t:{}:R>",
                         peak_rank.rank.to_formatted_string(&Locale::en),
@@ -148,7 +149,7 @@ fn create_embed_fields(statistics: &UserStatistics) -> Vec<(&str, String, bool)>
             false,
         ),
         (
-            "Grades :mortar_board:",
+            "Grades :mortar_board:".to_string(),
             format!(
                 "{}`{}` {}`{}` {}`{}` {}`{}` {}`{}`",
                 Grades::SSH,
