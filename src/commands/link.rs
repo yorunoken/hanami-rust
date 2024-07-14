@@ -2,12 +2,12 @@ use serenity::model::channel::Message;
 use serenity::prelude::*;
 use serenity::Error;
 
-use rusqlite::{Connection, Result};
+use rusqlite::Connection;
 
 use crate::utils::event_handler::Handler;
 
 struct User {
-    bancho_id: Option<String>,
+    bancho_id: Option<u32>,
 }
 
 pub async fn execute(
