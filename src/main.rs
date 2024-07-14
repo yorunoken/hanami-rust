@@ -13,7 +13,6 @@ mod commands {
 }
 
 mod options;
-
 mod utils;
 
 #[tokio::main]

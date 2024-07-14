@@ -50,6 +50,8 @@ impl EventHandler for Handler {
                     Some(command_name)
                 };
 
+                // Start typing
+                msg.channel_id.start_typing(&ctx.http);
                 if let Err(reason) =
                     (command.exec)(&ctx, &msg, args, &self, command.name, matched_alias).await
                 {
