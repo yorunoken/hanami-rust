@@ -8,7 +8,6 @@ struct DatabaseUser {
     mode: Option<String>,
 }
 
-#[derive(Debug)]
 pub struct User {
     pub bancho_id: u32,
     pub mode: GameMode,

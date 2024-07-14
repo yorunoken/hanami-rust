@@ -1,7 +1,6 @@
 use chrono::{Datelike, Utc};
 use num_format::{Locale, ToFormattedString};
 
-use rosu_v2::error::OsuError;
 use rosu_v2::model::GameMode;
 
 use rosu_v2::prelude::{UserExtended, UserId, UserStatistics};
@@ -21,7 +20,6 @@ pub async fn execute(
     command_alias: Option<&str>,
 ) -> Result<(), Error> {
     let user_help = get_user(&msg.author.id);
-    println!("{:#?}", user_help);
 
     let mode = match command_alias {
         Some("mania") => GameMode::Mania,
