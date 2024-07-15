@@ -6,12 +6,7 @@ use rosu_v2::prelude::*;
 
 use serenity::prelude::*;
 
-mod commands {
-    pub mod link;
-    pub mod ping;
-    pub mod profile;
-}
-
+mod commands;
 mod options;
 mod utils;
 
