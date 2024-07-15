@@ -3,6 +3,8 @@ use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
 use serenity::prelude::*;
 
+use regex::Regex;
+
 use rosu_v2::prelude::*;
 
 use crate::options::Command;
@@ -40,20 +42,44 @@ impl EventHandler for Handler {
             .collect();
 
         // Get the command name by removing the first arg of the args array
-        let command_name = args.remove(0);
+        let mut command_input = args.remove(0);
+
+        let regex = Regex::new(r"^([a-zA-Z]+)(\d*)$").unwrap();
+        let captures = regex.captures(&command_input);
+
+        // Initialize command variables
+        let mut index: usize = 0;
+
+        if let Some(caps) = captures {
+            command_input = caps.get(1).map_or("", |m| m.as_str());
+            if let Some(matched_index) = caps.get(2) {
+                index = matched_index.as_str().parse().unwrap_or(0);
+            }
+        }
 
         for command in &self.commands {
-            if command.name == command_name || command.aliases.contains(&command_name) {
-                let matched_alias = if command.name == command_name {
+            if command.name == command_input || command.aliases.contains(&command_input) {
+                let matched_alias = if command.name == command_input {
                     None
                 } else {
-                    Some(command_name)
+                    Some(command_input)
                 };
 
                 // Start typing
                 msg.channel_id.start_typing(&ctx.http);
-                if let Err(reason) =
-                    (command.exec)(&ctx, &msg, args, &self, command.name, matched_alias).await
+
+                // Execute command
+                if let Err(reason) = (command.exec)(
+                    &ctx,
+                    &msg,
+                    args,
+                    &self,
+                    command.name,
+                    matched_alias,
+                    Some(index),
+                    Some(0 as usize),
+                )
+                .await
                 {
                     println!(
                         "There was an error while handling command {}: {:#?}",
