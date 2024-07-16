@@ -9,6 +9,7 @@ use crate::commands::link;
 use crate::commands::ping;
 use crate::commands::profile;
 use crate::commands::recent;
+use crate::commands::top;
 
 type CommandFn = for<'a> fn(
     &'a Context,                // Command context, `ctx`
@@ -120,6 +121,27 @@ pub fn get_prefix_commands() -> Vec<Command> {
             ],
             exec: |ctx, msg, args, handler, command_name, command_alias, play_index, play_page| {
                 Box::pin(recent::execute(
+                    ctx,
+                    msg,
+                    args,
+                    handler,
+                    command_name,
+                    command_alias,
+                    play_index,
+                    play_page,
+                ))
+            },
+        },
+        Command {
+            name: "top",
+            aliases: vec![
+                "top", "t", // osu! Standard
+                "topmania", "topm", "tm", // osu! Mania
+                "toptaiko", "topt", "tt", // osu! Taiko
+                "topcatch", "topc", "tc", // osu! Catch
+            ],
+            exec: |ctx, msg, args, handler, command_name, command_alias, play_index, play_page| {
+                Box::pin(top::execute(
                     ctx,
                     msg,
                     args,
