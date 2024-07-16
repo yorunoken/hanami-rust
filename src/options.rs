@@ -19,7 +19,7 @@ type CommandFn = for<'a> fn(
     Option<&'a str>,                   // The command's alias (if it was passed), `command_alias`
     Option<usize>,                     // The play index, `play_index`
     Option<usize>,                     // The play page, `play_page`
-) -> BoxFuture<'a, Result<(), Error>>;
+) -> BoxFuture<'a, ()>;
 
 pub struct Command {
     pub name: &'static str,
@@ -100,15 +100,23 @@ pub fn get_prefix_commands() -> Vec<Command> {
                 "recent",
                 "rs",
                 "r",
+                "recentpass",
+                "rp",
                 // osu! Mania
                 "recentmania",
                 "rm",
+                "recentmaniapass",
+                "rmp",
                 // osu! Taiko
                 "recenttaiko",
                 "rt",
+                "recenttaikopass",
+                "rtp",
                 // osu! Catch
                 "recentcatch",
                 "rc",
+                "recentcatchpass",
+                "rcp",
             ],
             exec: |ctx, msg, args, handler, command_name, command_alias, play_index, play_page| {
                 Box::pin(recent::execute(

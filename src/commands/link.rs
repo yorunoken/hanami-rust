@@ -1,6 +1,6 @@
+use serenity::all::CreateMessage;
 use serenity::model::channel::Message;
 use serenity::prelude::*;
-use serenity::Error;
 
 use rusqlite::Connection;
 
@@ -17,7 +17,7 @@ pub async fn execute(
     handler: &Handler,
     _command_name: &str,
     _command_alias: Option<&str>,
-) -> Result<(), Error> {
+) {
     // Connect to db
     let connection = Connection::open("./data.db").unwrap();
 
@@ -41,19 +41,18 @@ pub async fn execute(
             }
         }
         Err(user_error) => {
-            msg.channel_id
-                .say(&ctx.http, format!("Error fetching user: `{}`", user_error))
-                .await?;
-            return Ok(());
+            let builder =
+                CreateMessage::new().content(format!("Error fetching user: `{}`", user_error));
+            msg.channel_id.send_message(&ctx.http, builder);
+            return;
         }
     }
 
     if let Some(d) = user.bancho_id {
-        msg.channel_id
-                .say(&ctx.http, format!("You're already linked to user id: {d}.\n If this command was intentional, you should unlink and re-link yourself."))
-                .await?;
+        let builder = CreateMessage::new().content("You're already linked to user id: {d}.\n If this command was intentional, you should unlink and re-link yourself.");
+        msg.channel_id.send_message(&ctx.http, builder);
 
-        return Ok(());
+        return;
     }
 
     if let Some(bancho_id) = bancho_id {
@@ -64,22 +63,15 @@ pub async fn execute(
             .execute(query, [&msg.author.id.to_string(), &bancho_id.to_string()])
             .unwrap();
 
-        msg.channel_id
-            .say(
-                &ctx.http,
-                format!("Linked your Discord account to {}", bancho_id),
-            )
-            .await?;
+        let builder =
+            CreateMessage::new().content(format!("Linked your Discord account to {}", bancho_id));
+        msg.channel_id.send_message(&ctx.http, builder);
 
-        return Ok(());
+        return;
     }
 
-    msg.channel_id
-        .say(
-            &ctx.http,
-            "how tf are you here\nreport it to @yorunoken pls",
-        )
-        .await?;
+    let builder = CreateMessage::new().content("how tf are you here\nreport it to @yorunoken pls");
+    msg.channel_id.send_message(&ctx.http, builder);
 
-    Ok(())
+    return;
 }

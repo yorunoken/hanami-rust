@@ -7,7 +7,6 @@ use rosu_v2::prelude::{UserExtended, UserId, UserStatistics};
 use serenity::builder::{CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter, CreateMessage};
 use serenity::model::channel::Message;
 use serenity::prelude::*;
-use serenity::Error;
 
 use crate::utils::{emojis::Grades, event_handler::Handler, osu::get_user};
 
@@ -18,7 +17,7 @@ pub async fn execute(
     handler: &Handler,
     _command_name: &str,
     command_alias: Option<&str>,
-) -> Result<(), Error> {
+) {
     let user_help = get_user(&msg.author.id);
 
     let mode = match command_alias {
@@ -31,40 +30,31 @@ pub async fn execute(
     let username = args.join(" ");
     if username.is_empty() {
         if let Some(user_help) = &user_help {
-            return fetch_and_send_user_data(
-                ctx,
-                msg,
-                UserId::Id(user_help.bancho_id),
-                mode,
-                handler,
-            )
-            .await;
+            let builder = create_message(UserId::Id(user_help.bancho_id), mode, handler).await;
+            msg.channel_id.send_message(&ctx.http, builder).await;
+            return;
         } else {
-            msg.channel_id
-                .say(&ctx.http, "Please provide a username.")
-                .await?;
-            return Ok(());
+            let builder = CreateMessage::new().content("Please provide a username.");
+            msg.channel_id.send_message(&ctx.http, builder).await;
+
+            return;
         }
     }
 
-    fetch_and_send_user_data(ctx, msg, UserId::Name(username.into()), mode, handler).await
+    let builder = create_message(UserId::Name(username.into()), mode, handler).await;
+    msg.channel_id.send_message(&ctx.http, builder).await;
 }
 
-async fn fetch_and_send_user_data(
-    ctx: &Context,
-    msg: &Message,
+async fn create_message(
     username: impl Into<UserId>,
     mode: GameMode,
     handler: &Handler,
-) -> Result<(), Error> {
+) -> CreateMessage {
     let user_result = handler.osu_client.user(username).mode(mode).await;
     let user = match user_result {
         Ok(ok) => ok,
         Err(user_error) => {
-            msg.channel_id
-                .say(&ctx.http, format!("Error fetching user: `{}`", user_error))
-                .await?;
-            return Ok(());
+            return CreateMessage::new().content(format!("Error fetching user: `{}`", user_error));
         }
     };
 
@@ -81,11 +71,7 @@ async fn fetch_and_send_user_data(
         .thumbnail(user.avatar_url)
         .footer(footer);
 
-    let builder = CreateMessage::new().embed(embed);
-
-    msg.channel_id.send_message(&ctx.http, builder).await?;
-
-    Ok(())
+    CreateMessage::new().embed(embed)
 }
 
 fn create_author_embed(user: &UserExtended, statistics: &UserStatistics) -> CreateEmbedAuthor {

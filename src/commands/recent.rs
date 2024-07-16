@@ -8,7 +8,6 @@ use rosu_v2::prelude::*;
 use serenity::builder::{CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter, CreateMessage};
 use serenity::model::channel::Message;
 use serenity::prelude::*;
-use serenity::Error;
 
 use crate::utils::{emojis::Grades, event_handler::Handler, osu};
 
@@ -21,18 +20,25 @@ pub async fn execute(
     command_alias: Option<&str>,
     play_index: Option<usize>,
     _play_page: Option<usize>,
-) -> Result<(), Error> {
+) -> () {
     let user_help = osu::get_user(&msg.author.id);
-    let include_fails = true;
 
     let mode = match command_alias {
-        Some("recentmania") => GameMode::Mania,
-        Some("rm") => GameMode::Mania,
-        Some("recenttaiko") => GameMode::Taiko,
-        Some("rt") => GameMode::Taiko,
-        Some("recentcatch") => GameMode::Catch,
-        Some("rc") => GameMode::Catch,
+        Some(alias) if alias.starts_with("recentmania") || alias.starts_with("rm") => {
+            GameMode::Mania
+        }
+        Some(alias) if alias.starts_with("recenttaiko") || alias.starts_with("rt") => {
+            GameMode::Taiko
+        }
+        Some(alias) if alias.starts_with("recentcatch") || alias.starts_with("rc") => {
+            GameMode::Catch
+        }
         _ => user_help.as_ref().map_or(GameMode::Osu, |u| u.mode),
+    };
+
+    let include_fails = match command_alias {
+        Some(alias) if alias.ends_with("pass") || alias.ends_with('p') => false,
+        _ => true,
     };
 
     let index = match play_index {
@@ -43,9 +49,7 @@ pub async fn execute(
     let username = args.join(" ");
     if username.is_empty() {
         if let Some(user_help) = &user_help {
-            return fetch_and_send_recent(
-                ctx,
-                msg,
+            let builder = create_message(
                 UserId::Id(user_help.bancho_id),
                 mode,
                 handler,
@@ -53,43 +57,42 @@ pub async fn execute(
                 include_fails,
             )
             .await;
+
+            msg.channel_id.send_message(&ctx.http, builder);
+            return;
         } else {
-            msg.channel_id
-                .say(&ctx.http, "Please provide a username.")
-                .await?;
-            return Ok(());
+            let builder = CreateMessage::new().content("Please provide a username.");
+            msg.channel_id.send_message(&ctx.http, builder);
+
+            return;
         }
     }
 
-    fetch_and_send_recent(
-        ctx,
-        msg,
+    let builder = create_message(
         UserId::Name(username.into()),
         mode,
         handler,
         index,
         include_fails,
     )
-    .await
+    .await;
+
+    msg.channel_id.send_message(&ctx.http, builder).await;
+    return;
 }
 
-async fn fetch_and_send_recent(
-    ctx: &Context,
-    msg: &Message,
+async fn create_message(
     username: impl Into<UserId>,
     mode: GameMode,
     handler: &Handler,
     index: usize,
     include_fails: bool,
-) -> Result<(), Error> {
+) -> CreateMessage {
     let user_result = handler.osu_client.user(username).mode(mode).await;
     let user = match user_result {
         Ok(ok) => ok,
         Err(reason) => {
-            msg.channel_id
-                .say(&ctx.http, format!("Error fetching user: `{}`", reason))
-                .await?;
-            return Ok(());
+            return CreateMessage::new().content(format!("Error fetching user: `{}`", reason));
         }
     };
 
@@ -103,12 +106,13 @@ async fn fetch_and_send_recent(
     let scores = match scores_result {
         Ok(ok) => ok,
         Err(error) => {
-            msg.channel_id
-                .say(&ctx.http, format!("Error fetching scores: `{}`", error))
-                .await?;
-            return Ok(());
+            return CreateMessage::new().content(format!("Error fetching scores: `{}`", error));
         }
     };
+
+    if index > scores.len() - 1 {
+        return CreateMessage::new().content("No plays found with these settings");
+    }
 
     let score = &scores[index];
 
@@ -118,10 +122,8 @@ async fn fetch_and_send_recent(
             let fetched_map = match handler.osu_client.beatmap().map_id(score.map_id).await {
                 Ok(ok) => ok,
                 Err(reason) => {
-                    msg.channel_id
-                        .say(&ctx.http, format!("Error fetching scores: `{}`", reason))
-                        .await?;
-                    return Ok(());
+                    return CreateMessage::new()
+                        .content(format!("Error fetching scores: `{}`", reason));
                 }
             };
 
@@ -135,11 +137,8 @@ async fn fetch_and_send_recent(
             let fetched_set = match handler.osu_client.beatmapset(map.mapset_id).await {
                 Ok(ok) => ok,
                 Err(reason) => {
-                    msg.channel_id
-                        .say(&ctx.http, format!("Error fetching scores: `{}`", reason))
-                        .await?;
-
-                    return Ok(());
+                    return CreateMessage::new()
+                        .content(format!("Error fetching scores: `{}`", reason));
                 }
             };
 
@@ -172,11 +171,7 @@ async fn fetch_and_send_recent(
         .url(&map.url)
         .thumbnail(user.avatar_url);
 
-    let builder = CreateMessage::new().embed(embed);
-
-    msg.channel_id.send_message(&ctx.http, builder).await?;
-
-    Ok(())
+    CreateMessage::new().embed(embed)
 }
 
 fn create_author_embed(user: &UserExtended, statistics: &UserStatistics) -> CreateEmbedAuthor {
