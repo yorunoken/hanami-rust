@@ -7,6 +7,7 @@ use rosu_v2::prelude::{UserExtended, UserId, UserStatistics};
 use serenity::builder::{CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter, CreateMessage};
 use serenity::model::channel::Message;
 use serenity::prelude::*;
+use serenity::Error;
 
 use crate::utils::{emojis::Grades, event_handler::Handler, osu::get_user};
 
@@ -17,7 +18,7 @@ pub async fn execute(
     handler: &Handler,
     _command_name: &str,
     command_alias: Option<&str>,
-) {
+) -> Result<(), Error> {
     let user_help = get_user(&msg.author.id);
 
     let mode = match command_alias {
@@ -31,18 +32,18 @@ pub async fn execute(
     if username.is_empty() {
         if let Some(user_help) = &user_help {
             let builder = create_message(UserId::Id(user_help.bancho_id), mode, handler).await;
-            msg.channel_id.send_message(&ctx.http, builder).await;
-            return;
+            msg.channel_id.send_message(&ctx.http, builder).await?;
+            return Ok(());
         } else {
             let builder = CreateMessage::new().content("Please provide a username.");
-            msg.channel_id.send_message(&ctx.http, builder).await;
-
-            return;
+            msg.channel_id.send_message(&ctx.http, builder).await?;
+            return Ok(());
         }
     }
 
     let builder = create_message(UserId::Name(username.into()), mode, handler).await;
-    msg.channel_id.send_message(&ctx.http, builder).await;
+    msg.channel_id.send_message(&ctx.http, builder).await?;
+    Ok(())
 }
 
 async fn create_message(

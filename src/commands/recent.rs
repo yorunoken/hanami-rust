@@ -8,6 +8,7 @@ use rosu_v2::prelude::*;
 use serenity::builder::{CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter, CreateMessage};
 use serenity::model::channel::Message;
 use serenity::prelude::*;
+use serenity::Error;
 
 use crate::utils::{emojis::Grades, event_handler::Handler, osu};
 
@@ -20,7 +21,7 @@ pub async fn execute(
     command_alias: Option<&str>,
     play_index: Option<usize>,
     _play_page: Option<usize>,
-) -> () {
+) -> Result<(), Error> {
     let user_help = osu::get_user(&msg.author.id);
 
     let mode = match command_alias {
@@ -58,13 +59,13 @@ pub async fn execute(
             )
             .await;
 
-            msg.channel_id.send_message(&ctx.http, builder);
-            return;
+            msg.channel_id.send_message(&ctx.http, builder).await?;
+            return Ok(());
         } else {
             let builder = CreateMessage::new().content("Please provide a username.");
-            msg.channel_id.send_message(&ctx.http, builder);
+            msg.channel_id.send_message(&ctx.http, builder).await?;
 
-            return;
+            return Ok(());
         }
     }
 
@@ -77,8 +78,8 @@ pub async fn execute(
     )
     .await;
 
-    msg.channel_id.send_message(&ctx.http, builder).await;
-    return;
+    msg.channel_id.send_message(&ctx.http, builder).await?;
+    Ok(())
 }
 
 async fn create_message(

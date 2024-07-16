@@ -14,7 +14,7 @@ pub struct Handler {
     pub commands: Vec<Command>,
 }
 
-const PREFIX: &str = ">";
+const PREFIX: &str = "'";
 
 #[async_trait]
 impl EventHandler for Handler {
@@ -69,7 +69,7 @@ impl EventHandler for Handler {
                 msg.channel_id.start_typing(&ctx.http);
 
                 // Execute command
-                (command.exec)(
+                if let Err(reason) = (command.exec)(
                     &ctx,
                     &msg,
                     args,
@@ -79,7 +79,13 @@ impl EventHandler for Handler {
                     Some(index),
                     Some(0 as usize),
                 )
-                .await;
+                .await
+                {
+                    println!(
+                        "There was an error while handling command {}: {:#?}",
+                        command.name, reason
+                    )
+                }
 
                 return;
             }

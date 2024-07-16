@@ -19,7 +19,7 @@ type CommandFn = for<'a> fn(
     Option<&'a str>,                   // The command's alias (if it was passed), `command_alias`
     Option<usize>,                     // The play index, `play_index`
     Option<usize>,                     // The play page, `play_page`
-) -> BoxFuture<'a, ()>;
+) -> BoxFuture<'a, Result<(), Error>>;
 
 pub struct Command {
     pub name: &'static str,

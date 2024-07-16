@@ -1,6 +1,7 @@
 use serenity::all::CreateMessage;
 use serenity::model::channel::Message;
 use serenity::prelude::*;
+use serenity::Error;
 
 use rusqlite::Connection;
 
@@ -17,7 +18,7 @@ pub async fn execute(
     handler: &Handler,
     _command_name: &str,
     _command_alias: Option<&str>,
-) {
+) -> Result<(), Error> {
     // Connect to db
     let connection = Connection::open("./data.db").unwrap();
 
@@ -43,16 +44,16 @@ pub async fn execute(
         Err(user_error) => {
             let builder =
                 CreateMessage::new().content(format!("Error fetching user: `{}`", user_error));
-            msg.channel_id.send_message(&ctx.http, builder);
-            return;
+            msg.channel_id.send_message(&ctx.http, builder).await?;
+            return Ok(());
         }
     }
 
     if let Some(d) = user.bancho_id {
-        let builder = CreateMessage::new().content("You're already linked to user id: {d}.\n If this command was intentional, you should unlink and re-link yourself.");
-        msg.channel_id.send_message(&ctx.http, builder);
+        let builder = CreateMessage::new().content(format!("You're already linked to user id: {d}.\n If this command was intentional, you should unlink and re-link yourself."));
+        msg.channel_id.send_message(&ctx.http, builder).await?;
 
-        return;
+        return Ok(());
     }
 
     if let Some(bancho_id) = bancho_id {
@@ -65,13 +66,13 @@ pub async fn execute(
 
         let builder =
             CreateMessage::new().content(format!("Linked your Discord account to {}", bancho_id));
-        msg.channel_id.send_message(&ctx.http, builder);
+        msg.channel_id.send_message(&ctx.http, builder).await?;
 
-        return;
+        return Ok(());
     }
 
     let builder = CreateMessage::new().content("how tf are you here\nreport it to @yorunoken pls");
-    msg.channel_id.send_message(&ctx.http, builder);
+    msg.channel_id.send_message(&ctx.http, builder).await?;
 
-    return;
+    Ok(())
 }
