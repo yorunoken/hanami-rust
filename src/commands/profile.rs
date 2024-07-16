@@ -9,7 +9,8 @@ use serenity::model::channel::Message;
 use serenity::prelude::*;
 use serenity::Error;
 
-use crate::utils::{emojis::Grades, event_handler::Handler, osu::get_user};
+use crate::event_handler::Handler;
+use crate::utils::{emojis::Grades, osu::get_user};
 
 pub async fn execute(
     ctx: &Context,

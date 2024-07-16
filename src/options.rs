@@ -3,7 +3,7 @@ use serenity::model::channel::Message;
 use serenity::prelude::*;
 use serenity::Error;
 
-use crate::utils;
+use crate::event_handler;
 
 use crate::commands::link;
 use crate::commands::ping;
@@ -11,14 +11,14 @@ use crate::commands::profile;
 use crate::commands::recent;
 
 type CommandFn = for<'a> fn(
-    &'a Context,                       // Command context, `ctx`
-    &'a Message,                       // Message variable, `msg`
-    Vec<&'a str>,                      // Arguments of the command, `args`
-    &'a utils::event_handler::Handler, // The handler, `handler`
-    &'a str,                           // The command's name, `command_name`
-    Option<&'a str>,                   // The command's alias (if it was passed), `command_alias`
-    Option<usize>,                     // The play index, `play_index`
-    Option<usize>,                     // The play page, `play_page`
+    &'a Context,                // Command context, `ctx`
+    &'a Message,                // Message variable, `msg`
+    Vec<&'a str>,               // Arguments of the command, `args`
+    &'a event_handler::Handler, // The handler, `handler`
+    &'a str,                    // The command's name, `command_name`
+    Option<&'a str>,            // The command's alias (if it was passed), `command_alias`
+    Option<usize>,              // The play index, `play_index`
+    Option<usize>,              // The play page, `play_page`
 ) -> BoxFuture<'a, Result<(), Error>>;
 
 pub struct Command {

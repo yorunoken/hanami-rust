@@ -7,6 +7,7 @@ use rosu_v2::prelude::*;
 use serenity::prelude::*;
 
 mod commands;
+mod event_handler;
 mod options;
 mod utils;
 
@@ -37,7 +38,7 @@ async fn main() {
 
     // Build the Discord client, and pass in our event handler
     let mut client = Client::builder(discord_token, intents)
-        .event_handler(utils::event_handler::Handler {
+        .event_handler(event_handler::Handler {
             osu_client,
             commands,
         })

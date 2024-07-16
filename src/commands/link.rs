@@ -5,7 +5,7 @@ use serenity::Error;
 
 use rusqlite::Connection;
 
-use crate::utils::event_handler::Handler;
+use crate::event_handler::Handler;
 
 struct User {
     bancho_id: Option<u32>,
