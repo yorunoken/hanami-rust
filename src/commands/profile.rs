@@ -32,7 +32,7 @@ pub async fn execute(
     let username = args.join(" ");
     if username.is_empty() {
         if let Some(user_help) = &user_help {
-            let builder = create_message(UserId::Id(user_help.bancho_id), mode, handler).await;
+            let builder = handle(UserId::Id(user_help.bancho_id), mode, handler).await;
             msg.channel_id.send_message(&ctx.http, builder).await?;
             return Ok(());
         } else {
@@ -42,16 +42,12 @@ pub async fn execute(
         }
     }
 
-    let builder = create_message(UserId::Name(username.into()), mode, handler).await;
+    let builder = handle(UserId::Name(username.into()), mode, handler).await;
     msg.channel_id.send_message(&ctx.http, builder).await?;
     Ok(())
 }
 
-async fn create_message(
-    username: impl Into<UserId>,
-    mode: GameMode,
-    handler: &Handler,
-) -> CreateMessage {
+async fn handle(username: impl Into<UserId>, mode: GameMode, handler: &Handler) -> CreateMessage {
     let user_result = handler.osu_client.user(username).mode(mode).await;
     let user = match user_result {
         Ok(ok) => ok,
@@ -60,6 +56,10 @@ async fn create_message(
         }
     };
 
+    create_message(user).await
+}
+
+async fn create_message(user: UserExtended) -> CreateMessage {
     let statistics = user.statistics.as_ref().expect("User statistics not found");
 
     let author = create_author_embed(&user, statistics);

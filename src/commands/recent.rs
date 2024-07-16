@@ -51,7 +51,7 @@ pub async fn execute(
     let username = args.join(" ");
     if username.is_empty() {
         if let Some(user_help) = &user_help {
-            let builder = create_message(
+            let builder = handle(
                 UserId::Id(user_help.bancho_id),
                 mode,
                 handler,
@@ -70,7 +70,7 @@ pub async fn execute(
         }
     }
 
-    let builder = create_message(
+    let builder = handle(
         UserId::Name(username.into()),
         mode,
         handler,
@@ -83,7 +83,7 @@ pub async fn execute(
     Ok(())
 }
 
-async fn create_message(
+async fn handle(
     username: impl Into<UserId>,
     mode: GameMode,
     handler: &Handler,
@@ -112,6 +112,16 @@ async fn create_message(
         }
     };
 
+    create_message(user, scores, mode, handler, index).await
+}
+
+async fn create_message(
+    user: UserExtended,
+    scores: Vec<Score>,
+    mode: GameMode,
+    handler: &Handler,
+    index: usize,
+) -> CreateMessage {
     if index > scores.len() - 1 {
         return CreateMessage::new().content("No plays found with these settings");
     }
