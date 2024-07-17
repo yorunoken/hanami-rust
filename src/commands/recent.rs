@@ -242,7 +242,7 @@ fn create_embed_fields(
             format!(
                 "FC: **{fc_pp:.2}pp** for **{fc_acc:.2}%**",
                 fc_pp = options.fc_perf.pp(),
-                fc_acc = osu::accuracy(fc_stats, mode)
+                fc_acc = osu::calculate_accuracy(fc_stats, mode)
             )
         } else {
             "".to_string()

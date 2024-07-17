@@ -174,7 +174,7 @@ pub async fn get_performance(
 // Calculate the accuracy
 // Stolen from https://docs.rs/rosu-v2/latest/src/rosu_v2/model/score.rs.html#485-509
 // :P
-pub fn accuracy(statistics: ScoreStatistics, mode: GameMode) -> f32 {
+pub fn calculate_accuracy(statistics: ScoreStatistics, mode: GameMode) -> f32 {
     let amount_objects = statistics.total_hits(mode) as f32;
 
     let (numerator, denumerator) = match mode {
