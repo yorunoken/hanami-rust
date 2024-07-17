@@ -77,7 +77,6 @@ impl EventHandler for Handler {
                     command.name,
                     matched_alias,
                     Some(index),
-                    Some(0 as usize),
                 )
                 .await
                 {

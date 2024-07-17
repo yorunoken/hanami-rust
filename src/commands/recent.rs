@@ -21,7 +21,6 @@ pub async fn execute(
     _command_name: &str,
     command_alias: Option<&str>,
     play_index: Option<usize>,
-    _play_page: Option<usize>,
 ) -> Result<(), Error> {
     let user_help = osu::get_user(&msg.author.id);
 
