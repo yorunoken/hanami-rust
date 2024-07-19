@@ -11,7 +11,7 @@ use serenity::prelude::*;
 use serenity::Error;
 
 use crate::event_handler::Handler;
-use crate::utils::{emojis::Grades, osu};
+use crate::utils::{emojis::Grades, helper, osu};
 
 pub async fn execute(
     ctx: &Context,
@@ -42,41 +42,40 @@ pub async fn execute(
         _ => true,
     };
 
+    let (flags, args) = helper::get_flags(args.clone());
+
     let index = match play_index {
         Some(index) => index,
-        None => 0,
+        None => {
+            if let Some(s) = flags.get("index") {
+                match s.parse::<usize>() {
+                    Ok(ok) => ok,
+                    Err(_) => 0,
+                }
+            } else {
+                0
+            }
+        }
     };
 
-    let username = args.join(" ");
-    if username.is_empty() {
-        if let Some(user_help) = &user_help {
-            let builder = handle(
-                UserId::Id(user_help.bancho_id),
-                mode,
-                handler,
-                index,
-                include_fails,
-            )
-            .await;
-
-            msg.channel_id.send_message(&ctx.http, builder).await?;
-            return Ok(());
-        } else {
-            let builder = CreateMessage::new().content("Please provide a username.");
-            msg.channel_id.send_message(&ctx.http, builder).await?;
-
-            return Ok(());
+    let username = helper::get_username(args);
+    let builder = match username {
+        Some(username) => handle(username, mode, handler, index, include_fails).await,
+        None => {
+            if let Some(user_help) = &user_help {
+                handle(
+                    UserId::Id(user_help.bancho_id),
+                    mode,
+                    handler,
+                    index,
+                    include_fails,
+                )
+                .await
+            } else {
+                CreateMessage::new().content("Please provide a username.")
+            }
         }
-    }
-
-    let builder = handle(
-        UserId::Name(username.into()),
-        mode,
-        handler,
-        index,
-        include_fails,
-    )
-    .await;
+    };
 
     msg.channel_id.send_message(&ctx.http, builder).await?;
     Ok(())
@@ -111,10 +110,10 @@ async fn handle(
         }
     };
 
-    create_message(user, scores, mode, handler, index).await
+    play(user, scores, mode, handler, index).await
 }
 
-async fn create_message(
+async fn play(
     user: UserExtended,
     scores: Vec<Score>,
     mode: GameMode,
