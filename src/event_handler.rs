@@ -48,12 +48,15 @@ impl EventHandler for Handler {
         let captures = regex.captures(&command_input);
 
         // Initialize command variables
-        let mut index: usize = 0;
+        let mut index: Option<usize> = None;
 
         if let Some(caps) = captures {
             command_input = caps.get(1).map_or("", |m| m.as_str());
             if let Some(matched_index) = caps.get(2) {
-                index = matched_index.as_str().parse().unwrap_or(1) - 1;
+                match matched_index.as_str().parse::<usize>() {
+                    Ok(m) => index = Some(m - 1),
+                    Err(_) => {}
+                }
             }
         }
 
@@ -69,16 +72,9 @@ impl EventHandler for Handler {
                 msg.channel_id.start_typing(&ctx.http);
 
                 // Execute command
-                if let Err(reason) = (command.exec)(
-                    &ctx,
-                    &msg,
-                    args,
-                    &self,
-                    command.name,
-                    matched_alias,
-                    Some(index),
-                )
-                .await
+                if let Err(reason) =
+                    (command.exec)(&ctx, &msg, args, &self, command.name, matched_alias, index)
+                        .await
                 {
                     println!(
                         "There was an error while handling command {}: {:#?}",
