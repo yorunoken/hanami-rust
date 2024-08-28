@@ -1,29 +1,38 @@
-use crate::event_handler::Handler;
-use std::time::Instant;
+use serenity::{
+    all::{CommandInteraction, Error},
+    async_trait,
+    builder::{CreateCommand, CreateInteractionResponse, CreateInteractionResponseMessage},
+    model::channel::Message,
+    prelude::*,
+};
 
-use serenity::all::CreateMessage;
-use serenity::builder::EditMessage;
-use serenity::model::channel::Message;
-use serenity::prelude::*;
-use serenity::Error;
+use crate::command_trait::Command;
 
-pub async fn execute(
-    ctx: &Context,
-    msg: &Message,
-    _args: Vec<&str>,
-    _handler: &Handler,
-    _command_name: &str,
-    _command_alias: Option<&str>,
-) -> Result<(), Error> {
-    let timer_start = Instant::now();
+pub struct Ping;
 
-    let content = "Pong!";
-    let builder = CreateMessage::new().content(content);
-    let mut sent_message = msg.channel_id.send_message(&ctx.http, builder).await?;
+#[async_trait]
+impl Command for Ping {
+    fn name(&self) -> &'static str {
+        "ping"
+    }
 
-    let elapsed = (Instant::now() - timer_start).as_millis();
+    async fn run(&self, ctx: &Context, msg: &Message, _args: Vec<&str>) -> Result<(), Error> {
+        let content = "Pong!";
+        msg.channel_id.say(&ctx.http, content).await?;
+        Ok(())
+    }
 
-    let builder = EditMessage::new().content(format!("{} ({}ms)", content, elapsed));
-    sent_message.edit(&ctx.http, builder).await?;
-    Ok(())
+    async fn run_slash(&self, ctx: &Context, command: &CommandInteraction) -> Result<(), Error> {
+        let content = "Pong!";
+
+        let builder = CreateInteractionResponse::Message(
+            CreateInteractionResponseMessage::new().content(content),
+        );
+        command.create_response(&ctx.http, builder).await?;
+        Ok(())
+    }
+
+    fn register(&self) -> CreateCommand {
+        CreateCommand::new(self.name()).description("A ping command")
+    }
 }

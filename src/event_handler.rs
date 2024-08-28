@@ -1,89 +1,59 @@
-use serenity::async_trait;
-use serenity::model::channel::Message;
-use serenity::model::gateway::Ready;
-use serenity::prelude::*;
-
-use regex::Regex;
-
-use rosu_v2::prelude::*;
-
-use crate::options::Command;
+use crate::command_trait::Command;
+use serenity::{
+    async_trait,
+    model::{application::Command as ApplicationCommand, prelude::*},
+    prelude::*,
+};
 
 pub struct Handler {
-    pub osu_client: Osu,
-    pub commands: Vec<Command>,
+    pub commands: Vec<Box<dyn Command + Send + Sync>>,
 }
-
-const PREFIX: &str = "'";
 
 #[async_trait]
 impl EventHandler for Handler {
-    async fn ready(&self, _ctx: Context, bot: Ready) {
-        println!("Bot has started as {}", bot.user.name);
-    }
-
     async fn message(&self, ctx: Context, msg: Message) {
-        // Make sure we're dealing with humans :)
-        if msg.author.bot || msg.content.len() == 0 {
+        if msg.author.bot || !msg.content.starts_with("'") {
             return;
         }
 
-        // Message doesn't start with the prefix, meaning it's not a command. So we return
-        if !msg.content.starts_with(PREFIX) {
-            return;
-        }
-
-        // Get the arguments
-        let mut args: Vec<&str> = msg
-            .content
-            .strip_prefix(PREFIX)
-            .unwrap()
-            .split_whitespace()
-            .collect();
-
-        // Get the command name by removing the first arg of the args array
-        let mut command_input = args.remove(0);
-
-        let regex = Regex::new(r"^([a-zA-Z]+)(\d*)$").unwrap();
-        let captures = regex.captures(&command_input);
-
-        // Initialize command variables
-        let mut index: Option<usize> = None;
-
-        if let Some(caps) = captures {
-            command_input = caps.get(1).map_or("", |m| m.as_str());
-            if let Some(matched_index) = caps.get(2) {
-                match matched_index.as_str().parse::<usize>() {
-                    Ok(m) => index = Some(m - 1),
-                    Err(_) => {}
-                }
-            }
-        }
+        let mut args: Vec<&str> = msg.content[1..].split_whitespace().collect();
+        let command_name = args.remove(0).to_lowercase();
 
         for command in &self.commands {
-            if command.name == command_input || command.aliases.contains(&command_input) {
-                let matched_alias = if command.name == command_input {
-                    None
-                } else {
-                    Some(command_input)
-                };
-
-                // Start typing
-                msg.channel_id.start_typing(&ctx.http);
-
-                // Execute command
-                if let Err(reason) =
-                    (command.exec)(&ctx, &msg, args, &self, command.name, matched_alias, index)
-                        .await
-                {
-                    println!(
-                        "There was an error while handling command {}: {:#?}",
-                        command.name, reason
-                    )
+            if command.name() == command_name || command.aliases().contains(&command_name.as_str())
+            {
+                if let Err(why) = command.run(&ctx, &msg, args).await {
+                    println!("Error executing command: {:?}", why);
                 }
-
                 return;
             }
         }
+    }
+
+    async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
+        if let Interaction::Command(command) = interaction {
+            for cmd in &self.commands {
+                if cmd.name() == command.data.name.as_str() {
+                    if let Err(why) = cmd.run_slash(&ctx, &command).await {
+                        println!("Error executing slash command: {:?}", why);
+                    }
+                    return;
+                }
+            }
+        }
+    }
+
+    async fn ready(&self, ctx: Context, ready: Ready) {
+        println!("{} is connected!", ready.user.name);
+
+        let commands = self
+            .commands
+            .iter()
+            .map(|c| c.register())
+            .collect::<Vec<_>>();
+
+        ApplicationCommand::set_global_commands(&ctx.http, commands)
+            .await
+            .expect("Failed to set global application commands");
     }
 }
