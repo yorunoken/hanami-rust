@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use regex::Regex;
-use rosu_v2::mods;
 use rosu_v2::prelude::GameModsIntermode;
 
 pub fn get_flags(args: Vec<&str>) -> (HashMap<&str, &str>, Vec<&str>) {
