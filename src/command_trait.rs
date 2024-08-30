@@ -12,7 +12,13 @@ pub trait Command {
         vec![]
     }
 
-    async fn run(&self, ctx: &Context, msg: &Message, args: Vec<&str>) -> Result<(), Error>;
+    async fn run(
+        &self,
+        ctx: &Context,
+        msg: &Message,
+        args: Vec<&str>,
+        command: &str,
+    ) -> Result<(), Error>;
 
     async fn run_slash(&self, ctx: &Context, command: &CommandInteraction) -> Result<(), Error>;
 

@@ -9,10 +9,12 @@ pub struct Handler {
     pub commands: Vec<Box<dyn Command + Send + Sync>>,
 }
 
+const PREFIX: &str = "'";
+
 #[async_trait]
 impl EventHandler for Handler {
     async fn message(&self, ctx: Context, msg: Message) {
-        if msg.author.bot || !msg.content.starts_with("'") {
+        if msg.author.bot || !msg.content.starts_with(PREFIX) {
             return;
         }
 
@@ -22,7 +24,7 @@ impl EventHandler for Handler {
         for command in &self.commands {
             if command.name() == command_name || command.aliases().contains(&command_name.as_str())
             {
-                if let Err(why) = command.run(&ctx, &msg, args).await {
+                if let Err(why) = command.run(&ctx, &msg, args, command_name.as_str()).await {
                     println!("Error executing command: {:?}", why);
                 }
                 return;

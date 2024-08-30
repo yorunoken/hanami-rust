@@ -1,5 +1,5 @@
 use serenity::{
-    all::{CommandInteraction, Error},
+    all::{CommandInteraction, CreateMessage, Error},
     async_trait,
     builder::{CreateCommand, CreateInteractionResponse, CreateInteractionResponseMessage},
     model::channel::Message,
@@ -16,9 +16,16 @@ impl Command for Ping {
         "ping"
     }
 
-    async fn run(&self, ctx: &Context, msg: &Message, _args: Vec<&str>) -> Result<(), Error> {
+    async fn run(
+        &self,
+        ctx: &Context,
+        msg: &Message,
+        _args: Vec<&str>,
+        _command: &str,
+    ) -> Result<(), Error> {
         let content = "Pong!";
-        msg.channel_id.say(&ctx.http, content).await?;
+        let builder = CreateMessage::new().content(content);
+        msg.channel_id.send_message(&ctx.http, builder).await?;
         Ok(())
     }
 
